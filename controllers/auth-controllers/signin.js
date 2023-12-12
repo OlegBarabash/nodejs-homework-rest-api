@@ -13,6 +13,10 @@ const signin = async (req, res) => {
   if (!user) {
     throw HttpError(401, "Email or password is wrong");
   }
+
+  if (!user.verify) {
+    throw HttpError(401, "Email not verify");
+  }
   const passwordCompare = await bcrypt.compare(password, user.password);
   if (!passwordCompare) {
     throw HttpError(401, "Email or password is wrong");
@@ -27,7 +31,13 @@ const signin = async (req, res) => {
 
   const { subscription } = user;
 
-  res.json({ token, user: { email, subscription } });
+  res.json({
+    token,
+    user: {
+      email,
+      subscription,
+    },
+  });
 };
 
 export default ctrlWrapper(signin);

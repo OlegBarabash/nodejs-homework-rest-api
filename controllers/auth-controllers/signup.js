@@ -1,8 +1,12 @@
 import gravatar from "gravatar";
 import bcrypt from "bcryptjs";
 import User from "../../models/User.js";
-import { HttpError } from "../../helpers/index.js";
+import { HttpError, sendEmail } from "../../helpers/index.js";
 import ctrlWrapper from "../../decorators/ctrlWrapper.js";
+import { nanoid } from "nanoid";
+import "dotenv/config.js";
+
+const { BASE_URL } = process.env;
 
 const signup = async (req, res) => {
   const { email, password } = req.body;
@@ -13,6 +17,7 @@ const signup = async (req, res) => {
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
+  const verificationToken = nanoid();
 
   const avatarURL = gravatar.url(email, {
     s: "250",
@@ -24,7 +29,17 @@ const signup = async (req, res) => {
     ...req.body,
     password: hashPassword,
     avatarURL,
+    verificationToken,
   });
+
+  const verifyEmail = {
+    to: email,
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}">Click verify email</a>`,
+  };
+
+  await sendEmail(verifyEmail);
+
   res.status(201).json({
     user: {
       email: newUser.email,
